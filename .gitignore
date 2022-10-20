@@ -1,0 +1,12 @@
+# Folders
+build/
+dist/
+debug/
+release/
+bin/
+objects/
+
+# Files
+*.out
+*.wm
+.env
