@@ -74,13 +74,18 @@ void inst_pow(Wm* wm) {
 }
 
 void wm_dump_stack(Wm* wm) {
-    printf("Stack size: %ld\n", wm->stack_size);
-    printf("Stack: [\n");
+    printf("\t Stack size: %ld\n", wm->stack_size);
+    printf("\t Stack: [\n");
     for (int i = 0; i < wm->stack_size; i++) {
-        printf("\t%ld,\n", wm->stack[i]);
+        printf("\t\t%ld,\n", wm->stack[i]);
     }
-    printf(" ]\n");
+    printf("\t ]\n");
 }
+
+void inst_jump(Wm* wm, const Word* op) {
+    wm->stack_pointer = *op;
+}
+
 
 void inst_as_cstr(Instruction* inst) {
     switch (inst->inst_kind) {
@@ -90,13 +95,27 @@ void inst_as_cstr(Instruction* inst) {
         case PLUS:
             printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "PLUS");
             break;
-        case MINUS: break;
-        case DIV: break;
-        case MULT: break;
-        case POW: break;
-        case JMP: break;
-        case HALT: break;
-        default: break;
+        case MINUS:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "MINUS");
+			break;
+        case DIV:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "DIV");
+			break;
+        case MULT:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "MULT");
+			break;
+        case POW:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "POW");
+			break;
+        case JMP:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "JMP");
+			break;
+        case HALT:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "HALT");
+			break;
+        default:
+            printf("Instruction { operand=%ld,  kind=%s }\n", inst->operand, "Unreachable");
+			break;
     }
 
 }
@@ -109,6 +128,9 @@ void inst_print(Instruction* inst) {
 Err execute_instructions(Wm* wm, Instruction* inst) {
     inst_print(inst);
     switch (inst->inst_kind) {
+        case NOP:
+            wm->stack_pointer++;
+            break;
         case PUSH:
             if (wm->stack_size + 1 > WM_STACK_SIZE) {
                 return STACK_OVERFLOW;
@@ -151,6 +173,15 @@ Err execute_instructions(Wm* wm, Instruction* inst) {
             inst_pow(wm);
             wm->stack_pointer++;
             break;
+        case JMP:
+            if(inst->operand < 0 && inst->operand > wm->program_size) {
+                return ILLEGAL_MEMORY_ACCESS;
+            }
+            inst_jump(wm, &inst->operand);
+            break;
+        case HALT:
+            wm->halt = 1;
+            break;
         default:
             return ILLEGAL_INSTRUCTION;
             break;
@@ -172,6 +203,10 @@ void err_print(Wm* wm, Err e) {
             exit(2);
             break;
         case ILLEGAL_INSTRUCTION:
+            fprintf(stderr, "[Error] Illegal \n");
+            exit(3);
+            break;
+        case ILLEGAL_MEMORY_ACCESS:
             fprintf(stderr, "[Error] Illegal \n");
             exit(3);
             break;
@@ -239,17 +274,32 @@ void print_prog(Instruction* prog, size_t prog_size) {
     }
 }
 
+/** void _execute_program(Wm* wm){ */
+/**     pass(); */
+/** } */
+
 Err execute_program(Wm* wm) {
     printf("\t -> Stack Capacity: %d\n", WM_STACK_SIZE);
     /** printf("\t -> Program: \n"); */
     print_prog(wm->program, wm->program_size);
-    for(int i = 0; !wm->halt && i < wm->program_size; i++) {
-        Err e = execute_instructions(wm, &wm->program[i]);
+    int ptr = wm->stack_pointer;
+    int counter = 0;
+    while(counter < WM_PROGRAM_SIZE && !wm->halt) {
+        Err e = execute_instructions(wm, &wm->program[ptr]);
         err_print(wm, e);
         if (e != NO_ERR) {
             return e;
         }
+        ptr = wm->stack_pointer;
+        counter++;
     }
+    /** for(int i = 0; !wm->halt && i < wm->program_size; i++) { */
+    /**     Err e = execute_instructions(wm, &wm->program[i]); */
+    /**     err_print(wm, e); */
+    /**     if (e != NO_ERR) { */
+    /**         return e; */
+    /**     } */
+    /** } */
     return NO_ERR;
 }
 
@@ -263,6 +313,13 @@ Instruction program2[] = {
     INST_PUSH(3),
     INST_PUSH(2),
     INST_PLUS()
+};
+
+Instruction program3[] = {
+    { .operand=15, .inst_kind=PUSH },
+    { .operand=4,  .inst_kind=PUSH },
+    {              .inst_kind=PLUS },
+    { .operand=1,  .inst_kind=JMP }
 };
 
 void test_program() {
@@ -289,7 +346,8 @@ void test_program2() {
 
 void test_program3() {
     /** save_program("./deneme.wm", program2, 3); */
-    save_program("./deneme.wm", program, 3);
-    load_program_from_disk(&wm, "./deneme.wm");
+    /** save_program("./deneme.wm", program, 3); */
+    save_program("./program3.wm", program3, 4);
+    load_program_from_disk(&wm, "./program3.wm");
     execute_program(&wm);
 }

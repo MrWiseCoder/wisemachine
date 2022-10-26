@@ -5,11 +5,12 @@
 #define INST_PLUS() { .inst_kind=PLUS }
 
 #define WM_STACK_SIZE 1024
-#define WM_PROGRAM_SIZE 1024
+#define WM_PROGRAM_SIZE 10
 
 typedef int64_t Word;
 
 typedef enum {
+    NOP,
     PUSH,
     PLUS,
     MINUS,
@@ -17,6 +18,7 @@ typedef enum {
     MULT,
     POW,
     JMP,
+    JMP_IF,
     HALT
 } INST_KIND;
 
@@ -43,7 +45,8 @@ typedef enum {
     NO_ERR,
     STACK_OVERFLOW,
     STACK_UNDERFLOW,
-    ILLEGAL_INSTRUCTION
+    ILLEGAL_INSTRUCTION,
+    ILLEGAL_MEMORY_ACCESS
 } Err;
 
 

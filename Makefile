@@ -96,6 +96,9 @@ tests:	## Runs several tests in the main entrypoint
 checkMemoryLeaks:	## Checks memory leaks via Valgrind
 	@valgrind $(debug_target)
 
+analyze:		## Analyze source using clang --analyze flag
+	@clang --analyze $(source)
+
 gdb:	## Starts debugger (gdb) for analysis
 	@gdb $(debug_target)
 
